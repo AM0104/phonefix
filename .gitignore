@@ -1,0 +1,38 @@
+# зависимости и сборки
+node_modules/
+.npm-cache/
+vendor/
+
+# локальное окружение (portable PHP, Composer, кэш, БД SQLite)
+tools/
+backend/database/*.sqlite
+backend/.osp/
+backend/public/app/
+backend/public/storage/
+dist/
+
+# окружение
+.env
+.env.local
+*.local
+
+# временные файлы
+.tmp_extract/
+*.zip
+*.tar.gz
+.DS_Store
+Thumbs.db
+
+# рабочие файлы запуска (лог MySQL, временные БД и профили проверок)
+runtime/
+.runtime/
+
+# логи и кэш
+backend/storage/logs/*.log
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/bootstrap/cache/*.phpvendor/
+node_modules/
+.env
+.idea/

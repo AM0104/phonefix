@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0d0d0f" />
+    <title>PhoneFix — диагностика и ремонт телефонов</title>
+    <meta
+      name="description"
+      content="Сервисный центр PhoneFix: бесплатная диагностика телефонов, замена экранов и комплектующих, обновление ПО. Онлайн-запись мастера, гарантия до 6 месяцев."
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      /* Фон задаём прямо в HTML: даже если CSS-бандл не загрузится,
+         страница не будет белой. */
+      html,
+      body {
+        margin: 0;
+        background: #0d0d0f;
+        color: #f4f4f6;
+        font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      }
+      #boot-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      #boot-fallback .boot-card {
+        width: 100%;
+        max-width: 620px;
+        border: 1px solid #2f2f3d;
+        border-radius: 22px;
+        background: #1a1a22;
+        padding: 32px;
+        text-align: center;
+      }
+      #boot-fallback .boot-mark {
+        width: 54px;
+        height: 54px;
+        margin: 0 auto 16px;
+        border-radius: 14px;
+        background: #ffc400;
+        color: #0d0d0f;
+        font-weight: 800;
+        line-height: 54px;
+        letter-spacing: 1px;
+      }
+      #boot-fallback h1 {
+        font-size: 20px;
+        margin: 0 0 10px;
+      }
+      #boot-fallback p {
+        margin: 0;
+        color: #a5a5b4;
+        font-size: 15px;
+        line-height: 1.55;
+      }
+      #boot-hint {
+        display: none;
+        margin-top: 14px !important;
+        padding: 14px 16px;
+        border: 1px solid rgba(255, 92, 92, 0.35);
+        border-radius: 14px;
+        background: rgba(255, 92, 92, 0.08);
+        color: #ffb4b4 !important;
+        text-align: left;
+      }
+      #boot-fallback .boot-hint-actions {
+        margin-top: 16px;
+      }
+      #boot-fallback button {
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 10px 18px;
+        border-radius: 9px;
+        border: 1px solid transparent;
+        background: #ffc400;
+        color: #0d0d0f;
+      }
+      #boot-fallback button.ghost {
+        background: transparent;
+        border-color: #2f2f3d;
+        color: #f4f4f6;
+        margin-left: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Аварийный экран: React заменит его при первом рендере.
+           Если бандл не загрузился или упал — вместо белого экрана
+           остаётся понятное сообщение. -->
+      <div id="boot-fallback">
+        <div class="boot-card">
+          <div class="boot-mark">PF</div>
+          <h1>Загружаю PhoneFix…</h1>
+          <p>Если сообщение не исчезло, значит интерфейс не смог загрузиться.</p>
+          <p id="boot-hint"></p>
+          <div class="boot-hint-actions">
+            <button type="button" onclick="window.location.reload()">Обновить страницу</button>
+            <button type="button" class="ghost" onclick="window.location.href='/api/public/site'">
+              Проверить API
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Страховка от «белого экрана»: любые ошибки загрузки интерфейса
+      // и подвисшая загрузка показываются текстом, а не пустой страницей.
+      (function () {
+        var hint = document.getElementById('boot-hint')
+
+        function showHint(text) {
+          if (!hint || window.__PHONEFIX_MOUNTED__) return
+          hint.textContent = text
+          hint.style.display = 'block'
+        }
+
+        window.addEventListener('error', function (event) {
+          if (window.__PHONEFIX_MOUNTED__) return
+          var message = event && event.message ? event.message : 'не удалось загрузить скрипты сайта'
+          showHint(
+            'Ошибка загрузки интерфейса: ' +
+              message +
+              '. Нажмите Ctrl+F5. Если не помогает — запустите start-site.cmd заново и посмотрите консоль.',
+          )
+        })
+
+        setTimeout(function () {
+          showHint(
+            'Интерфейс не загрузился за 15 секунд. Обычно так бывает, когда не запущена база данных MySQL ' +
+              'или сервер API. Закройте это окно, запустите start-site.cmd и посмотрите сообщения в консоли ' +
+              '(или выполните check-env.cmd).',
+          )
+        }, 15000)
+      })()
+    </script>
+
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
