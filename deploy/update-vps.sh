@@ -65,7 +65,11 @@ php artisan migrate --force
 php artisan config:clear
 
 echo "== 4/9 ссылка на storage =="
-php artisan storage:link 2>/dev/null || echo "   ссылка уже существует"
+if [ -L "$APP_DIR/backend/public/storage" ]; then
+  echo "   ссылка уже есть — пропускаю"
+else
+  php artisan storage:link || echo "   не удалось создать ссылку (не критично)"
+fi
 
 echo "== 5/9 сборка фронтенда =="
 cd "$APP_DIR/frontend"
@@ -80,7 +84,11 @@ echo "== 6/9 кэши Laravel =="
 cd "$APP_DIR/backend"
 php artisan config:cache
 php artisan route:cache || true
-php artisan view:cache || true
+if [ -d resources/views ] && [ -n "$(ls -A resources/views 2>/dev/null)" ]; then
+  php artisan view:cache || true
+else
+  echo "   Blade-шаблонов в проекте нет — view:cache пропущен"
+fi
 
 echo "== 7/9 права на запись =="
 if id www-data >/dev/null 2>&1; then
