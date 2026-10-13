@@ -77,13 +77,7 @@ export default function Login() {
             Нет аккаунта? <Link className="accent-text" to="/register">Зарегистрироваться</Link>
           </p>
 
-          <div className="alert alert--info" style={{ fontSize: 13.5 }}>
-            <strong>Демо-доступы (из сидеров):</strong>
-            <br />
-            Клиент: client@phonefix.ru / password
-            <br />
-            Администратор: admin@phonefix.ru / admin123
-          </div>
+
         </div>
       </div>
     </section>
