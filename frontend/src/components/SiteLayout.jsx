@@ -89,7 +89,6 @@ function Header() {
               {userOpen && (
                 <div className="dropdown">
                   <Link to="/account">Личный кабинет</Link>
-                  <Link to="/account/appointments">Мои заявки</Link>
                   {isAdmin && <Link to="/admin">Админ-панель</Link>}
                   <div className="dropdown__divider" />
                   <button type="button" onClick={handleLogout}>

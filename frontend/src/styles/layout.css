@@ -139,7 +139,11 @@
   border-radius: 999px;
   border: 1px solid var(--pf-line);
   background: var(--pf-surface);
+  /* Без явного цвета браузер подставляет свой тёмный — на тёмной теме текст не читался. */
+  color: var(--pf-text);
   font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
   white-space: nowrap;
   max-width: 170px;
@@ -149,6 +153,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--pf-text);
 }
 
 .user-chip:hover {
