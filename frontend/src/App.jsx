@@ -14,6 +14,7 @@ import Reviews from './pages/Reviews.jsx'
 import Blog from './pages/Blog.jsx'
 import ArticleDetail from './pages/ArticleDetail.jsx'
 import Contacts from './pages/Contacts.jsx'
+import Privacy from './pages/Privacy.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Account from './pages/Account.jsx'
@@ -50,6 +51,7 @@ export default function App() {
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<ArticleDetail />} />
             <Route path="/contacts" element={<Contacts />} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route

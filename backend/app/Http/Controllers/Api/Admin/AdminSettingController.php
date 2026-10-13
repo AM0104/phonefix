@@ -26,7 +26,7 @@ class AdminSettingController extends Controller
         $data = $request->validate([
             'settings' => ['required', 'array'],
             'settings.*.key' => ['required', 'string', 'max:190'],
-            'settings.*.value' => ['nullable', 'string', 'max:5000'],
+            'settings.*.value' => ['nullable', 'string', 'max:20000'],
             'settings.*.group' => ['nullable', 'string', 'max:50'],
             'settings.*.label' => ['nullable', 'string', 'max:190'],
         ]);

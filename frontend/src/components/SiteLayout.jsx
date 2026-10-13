@@ -146,6 +146,7 @@ function Footer() {
             <Link to="/reviews">Отзывы</Link>
             <Link to="/blog">Блог</Link>
             <Link to="/contacts">Контакты</Link>
+            <Link to="/privacy">Политика конфиденциальности</Link>
             <Link to="/account">Личный кабинет</Link>
           </div>
 

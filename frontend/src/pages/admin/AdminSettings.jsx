@@ -4,6 +4,9 @@ import { useToast } from '../../components/Toast.jsx'
 import { useSite } from '../../context/SiteContext.jsx'
 import { Alert, Loading } from '../../components/ui.jsx'
 
+// Настройки с длинным текстом удобнее править в textarea, а не в одну строку.
+const LONG_KEYS = ['about_text', 'delivery_text', 'footer_text', 'privacy_text', 'privacy_policy']
+
 const GROUP_TITLES = {
   general: 'Основные данные',
   home: 'Главная страница',
@@ -90,7 +93,15 @@ export default function AdminSettings() {
               {settings.map((setting) => (
                 <div className="field" key={setting.key}>
                   <label>{setting.label || setting.key}</label>
-                  <input value={setting.value ?? ''} onChange={(event) => update(group, setting.key, event.target.value)} />
+                  {LONG_KEYS.includes(setting.key) ? (
+                    <textarea
+                      value={setting.value ?? ''}
+                      onChange={(event) => update(group, setting.key, event.target.value)}
+                      style={{ minHeight: 140 }}
+                    />
+                  ) : (
+                    <input value={setting.value ?? ''} onChange={(event) => update(group, setting.key, event.target.value)} />
+                  )}
                   <span className="field__hint">{setting.key}</span>
                 </div>
               ))}

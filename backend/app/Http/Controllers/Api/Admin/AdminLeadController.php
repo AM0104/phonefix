@@ -15,7 +15,7 @@ class AdminLeadController extends Controller
             Lead::query()
                 ->when($request->query('status'), fn ($q, $status) => $q->where('status', $status))
                 ->latest()
-                ->paginate((int) $request->query('per_page', 15))
+                ->paginate(min(100, max(1, (int) $request->query('per_page', 15))))
         );
     }
 

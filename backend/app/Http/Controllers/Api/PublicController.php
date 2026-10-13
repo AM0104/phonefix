@@ -15,7 +15,7 @@ class PublicController extends Controller
     public function site(): JsonResponse
     {
         return response()->json([
-            'settings' => Setting::map(),
+            'settings' => Setting::publicMap(),
             'categories' => Service::CATEGORY_LABELS,
         ]);
     }
@@ -23,7 +23,7 @@ class PublicController extends Controller
     public function home(): JsonResponse
     {
         return response()->json([
-            'settings' => Setting::map(),
+            'settings' => Setting::publicMap(),
             'categories' => Service::CATEGORY_LABELS,
             'popular_services' => Service::query()->active()->orderBy('sort_order')->limit(6)->get(),
             'services_count' => Service::query()->active()->count(),

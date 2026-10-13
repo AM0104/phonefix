@@ -15,11 +15,18 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'role' => App\Http\Middleware\EnsureUserHasRole::class,
+            'active' => App\Http\Middleware\EnsureUserIsActive::class,
         ]);
+
+        // Общий лимит на API (60 запросов в минуту на пользователя/IP).
+        $middleware->throttleApi();
 
         $middleware->api(prepend: [
             Illuminate\Http\Middleware\HandleCors::class,
         ]);
+
+        // Заголовки безопасности нужны и без nginx — например, при `php artisan serve`.
+        $middleware->append(App\Http\Middleware\SecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (Illuminate\Auth\AuthenticationException $e, Request $request) {

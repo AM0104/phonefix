@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { publicApi } from '../api/client.js'
 import { Alert, Field, Modal } from './ui.jsx'
 import { useSite } from '../context/SiteContext.jsx'
@@ -75,7 +76,10 @@ export default function CallbackModal({ source = 'callback-modal', onClose }) {
         </button>
 
         <p className="field__hint" style={{ margin: 0 }}>
-          {setting('privacy_text')}
+          {setting('privacy_text')}{' '}
+          <Link className="accent-text" to="/privacy" onClick={onClose}>
+            Подробнее
+          </Link>
         </p>
       </form>
     </Modal>

@@ -20,6 +20,7 @@ export default function Register() {
   const [errors, setErrors] = useState({})
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
+  const [agreed, setAgreed] = useState(false)
 
   const update = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }))
 
@@ -68,8 +69,8 @@ export default function Register() {
             </Field>
 
             <div className="form-grid">
-              <Field label="Пароль *" error={errors.password?.[0]}>
-                <input type="password" value={form.password} onChange={update('password')} required minLength={6} />
+              <Field label="Пароль *" error={errors.password?.[0]} hint="Минимум 8 символов">
+                <input type="password" value={form.password} onChange={update('password')} required minLength={8} />
               </Field>
 
               <Field label="Повторите пароль *">
@@ -78,12 +79,23 @@ export default function Register() {
                   value={form.password_confirmation}
                   onChange={update('password_confirmation')}
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </Field>
             </div>
 
-            <button type="submit" className="btn btn--primary btn--block" disabled={sending}>
+            <label className="checkbox">
+              <input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} required />
+              <span>
+                Я согласен с{' '}
+                <Link className="accent-text" to="/privacy" target="_blank" rel="noreferrer">
+                  политикой конфиденциальности
+                </Link>{' '}
+                и на обработку персональных данных
+              </span>
+            </label>
+
+            <button type="submit" className="btn btn--primary btn--block" disabled={sending || !agreed}>
               {sending ? 'Создаём аккаунт…' : 'Зарегистрироваться'}
             </button>
           </form>

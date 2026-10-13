@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // --- Публичные данные сайта ---------------------------------------------
-Route::prefix('public')->group(function () {
+Route::prefix('public')->middleware('throttle:public')->group(function () {
     Route::get('site', [PublicController::class, 'site']);
     Route::get('home', [PublicController::class, 'home']);
     Route::get('services', [ServiceController::class, 'index']);
@@ -38,15 +38,15 @@ Route::prefix('public')->group(function () {
     Route::get('reviews', [ReviewController::class, 'index']);
     Route::get('articles', [ArticleController::class, 'index']);
     Route::get('articles/{article:slug}', [ArticleController::class, 'show']);
-    Route::post('leads', [LeadController::class, 'store']);
+    Route::post('leads', [LeadController::class, 'store'])->middleware('throttle:leads');
 });
 
 // --- Регистрация и вход --------------------------------------------------
-Route::post('auth/register', [AuthController::class, 'register']);
-Route::post('auth/login', [AuthController::class, 'login']);
+Route::post('auth/register', [AuthController::class, 'register'])->middleware('throttle:register');
+Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
 // --- Личный кабинет клиента ---------------------------------------------
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('auth/me', [AuthController::class, 'me']);
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::patch('auth/profile', [AuthController::class, 'updateProfile']);

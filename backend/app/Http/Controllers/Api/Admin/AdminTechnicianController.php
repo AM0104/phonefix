@@ -7,6 +7,7 @@ use App\Models\Technician;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class AdminTechnicianController extends Controller
 {
@@ -25,12 +26,26 @@ class AdminTechnicianController extends Controller
     {
         $data = $this->validated($request);
 
+        $passwordWasGenerated = false;
+
+        $generatedPassword = null;
+        $passwordWasGenerated = false;
+
         // Если указан e-mail — создаём связанную учётную запись мастера.
+        // Пароль по умолчанию не должен быть угадываемым: генерируем случайный
+        // и показываем его администратору один раз.
         if (! empty($data['email'])) {
+            if (empty($data['password'])) {
+                $data['password'] = Str::password(16);
+                $passwordWasGenerated = true;
+            }
+
+            $generatedPassword = $data['password'];
+
             $user = User::query()->create([
                 'name' => $data['full_name'],
                 'email' => $data['email'],
-                'password' => $data['password'] ?? 'password',
+                'password' => $data['password'],
                 'role' => User::ROLE_TECHNICIAN,
                 'phone' => $data['phone'] ?? null,
             ]);
@@ -41,7 +56,13 @@ class AdminTechnicianController extends Controller
 
         $technician = Technician::query()->create($data);
 
-        return response()->json(['message' => 'Мастер добавлен.', 'data' => $technician], 201);
+        return response()->json([
+            'message' => $passwordWasGenerated
+                ? 'Мастер добавлен. Пароль для входа: '.$generatedPassword.' — сохраните и передайте мастеру.'
+                : 'Мастер добавлен.',
+            'generated_password' => $passwordWasGenerated ? $generatedPassword : null,
+            'data' => $technician,
+        ], 201);
     }
 
     public function show(Technician $technician): JsonResponse
@@ -91,7 +112,7 @@ class AdminTechnicianController extends Controller
             'is_active' => ['boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'email' => ['nullable', 'email', 'unique:users,email'],
-            'password' => ['nullable', 'string', 'min:6'],
+            'password' => ['nullable', 'string', 'min:8'],
             'phone' => ['nullable', 'string', 'max:30'],
         ]);
     }

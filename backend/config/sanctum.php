@@ -11,7 +11,8 @@ return [
 
     'guard' => ['web'],
 
-    'expiration' => null,
+    // Срок жизни API-токена: по умолчанию 7 дней (10080 минут).
+    'expiration' => (int) env('SANCTUM_TOKEN_EXPIRATION', 10080),
 
     'token_prefix' => env('SANCTUM_TOKEN_PREFIX', ''),
 

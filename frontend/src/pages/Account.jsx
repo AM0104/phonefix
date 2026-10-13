@@ -15,7 +15,14 @@ export default function Account() {
   const [tab, setTab] = useState('appointments')
   const [reviewFor, setReviewFor] = useState(null)
   const [reviewForm, setReviewForm] = useState({ rating: 5, text: '' })
-  const [profile, setProfile] = useState({ name: '', phone: '', email: '', password: '', password_confirmation: '' })
+  const [profile, setProfile] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
+    current_password: '',
+  })
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
 
@@ -41,6 +48,7 @@ export default function Account() {
         email: user.email || '',
         password: '',
         password_confirmation: '',
+        current_password: '',
       })
     }
   }, [user])
@@ -89,9 +97,21 @@ export default function Account() {
         delete payload.password_confirmation
       }
 
+      // Текущий пароль спрашиваем только когда меняется пароль или e-mail.
+      const changingEmail = payload.email.trim().toLowerCase() !== (user?.email || '').trim().toLowerCase()
+      const needsCurrentPassword = Boolean(payload.password) || changingEmail
+
+      if (!needsCurrentPassword) {
+        delete payload.current_password
+      } else if (!payload.current_password) {
+        setErrors({ current_password: ['Укажите текущий пароль.'] })
+        toast.error('Укажите текущий пароль, чтобы изменить пароль или e-mail.')
+        return
+      }
+
       const data = await authApi.updateProfile(payload)
       toast.success(data.message)
-      setProfile((current) => ({ ...current, password: '', password_confirmation: '' }))
+      setProfile((current) => ({ ...current, password: '', password_confirmation: '', current_password: '' }))
       await refresh()
     } catch (error) {
       setErrors(error.errors || {})
@@ -207,6 +227,8 @@ export default function Account() {
                   type="password"
                   value={profile.password}
                   onChange={(event) => setProfile((c) => ({ ...c, password: event.target.value }))}
+                  minLength={8}
+                  autoComplete="new-password"
                 />
               </Field>
 
@@ -215,9 +237,24 @@ export default function Account() {
                   type="password"
                   value={profile.password_confirmation}
                   onChange={(event) => setProfile((c) => ({ ...c, password_confirmation: event.target.value }))}
+                  minLength={8}
+                  autoComplete="new-password"
                 />
               </Field>
             </div>
+
+            <Field
+              label="Текущий пароль"
+              error={errors.current_password?.[0]}
+              hint="Нужен при смене пароля или e-mail — так украденный токен не даст захватить аккаунт"
+            >
+              <input
+                type="password"
+                value={profile.current_password}
+                onChange={(event) => setProfile((c) => ({ ...c, current_password: event.target.value }))}
+                autoComplete="current-password"
+              />
+            </Field>
 
             <button type="submit" className="btn btn--primary" style={{ alignSelf: 'flex-start' }} disabled={saving}>
               {saving ? 'Сохраняем…' : 'Сохранить изменения'}

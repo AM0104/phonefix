@@ -21,7 +21,7 @@ class AdminUserController extends Controller
                     ->orWhere('phone', 'like', "%{$search}%"));
             })
             ->latest()
-            ->paginate((int) $request->query('per_page', 15));
+            ->paginate(min(100, max(1, (int) $request->query('per_page', 15))));
 
         return response()->json($users);
     }
@@ -31,7 +31,7 @@ class AdminUserController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:6'],
+            'password' => ['required', 'string', 'min:8'],
             'role' => ['required', 'in:client,technician,admin'],
             'phone' => ['nullable', 'string', 'max:30'],
             'is_active' => ['boolean'],
@@ -47,7 +47,7 @@ class AdminUserController extends Controller
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:120'],
             'email' => ['sometimes', 'email', Rule::unique('users', 'email')->ignore($user->id)],
-            'password' => ['nullable', 'string', 'min:6'],
+            'password' => ['nullable', 'string', 'min:8'],
             'role' => ['sometimes', 'in:client,technician,admin'],
             'phone' => ['nullable', 'string', 'max:30'],
             'is_active' => ['boolean'],

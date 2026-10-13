@@ -190,7 +190,7 @@ export default function AdminUsers() {
                   value={form.password}
                   onChange={(event) => setForm((c) => ({ ...c, password: event.target.value }))}
                   required={!editingId}
-                  minLength={editingId ? 0 : 6}
+                  minLength={editingId ? 0 : 8}
                 />
               </Field>
 

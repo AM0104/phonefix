@@ -24,7 +24,7 @@ class AdminAppointmentController extends Controller
                 });
             })
             ->orderByDesc('scheduled_at')
-            ->paginate((int) $request->query('per_page', 15));
+            ->paginate(min(100, max(1, (int) $request->query('per_page', 15))));
 
         return response()->json($appointments);
     }

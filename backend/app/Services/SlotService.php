@@ -9,6 +9,17 @@ use Illuminate\Support\Collection;
 
 class SlotService
 {
+    /** @var array<string, string|null>|null */
+    private ?array $settingsCache = null;
+
+    /**
+     * @return array<string, string|null>
+     */
+    private function settings(): array
+    {
+        return $this->settingsCache ??= \App\Models\Setting::map();
+    }
+
     /**
      * Полный список возможных слотов мастера на дату (по рабочим часам).
      *
@@ -37,21 +48,27 @@ class SlotService
      */
     public function freeSlotsFor(Technician $technician, CarbonImmutable $date): array
     {
-        $settings = \App\Models\Setting::map();
+        $settings = $this->settings();
         $start = $settings['work_day_start'] ?? '10:00';
         $end = $settings['work_day_end'] ?? '20:00';
-        $step = (int) ($settings['slot_step_minutes'] ?? 60);
+        $step = max(15, (int) ($settings['slot_step_minutes'] ?? 60));
 
+        // Занятыми считаются только реально забронированные окна (is_available = false).
+        // Строки с is_available = true — заранее объявленные окна приёма, они не блокируют запись.
         $busy = Schedule::query()
             ->where('technician_id', $technician->id)
+            ->where('is_available', false)
             ->whereDate('starts_at', $date->toDateString())
-            ->pluck('starts_at')
-            ->map(fn ($value) => CarbonImmutable::parse($value)->format('H:i'))
-            ->all();
+            ->get(['starts_at', 'ends_at']);
 
         return $this->generateSlots($date, $start, $end, $step)
-            ->reject(fn (CarbonImmutable $slot) => in_array($slot->format('H:i'), $busy, true))
             ->reject(fn (CarbonImmutable $slot) => $slot->isPast())
+            ->reject(function (CarbonImmutable $slot) use ($busy, $step) {
+                $slotEnd = $slot->addMinutes($step);
+
+                return $busy->contains(fn (Schedule $busySlot) => CarbonImmutable::parse($busySlot->starts_at)->lessThan($slotEnd)
+                    && CarbonImmutable::parse($busySlot->ends_at)->greaterThan($slot));
+            })
             ->map(fn (CarbonImmutable $slot) => [
                 'time' => $slot->format('H:i'),
                 'starts_at' => $slot->format('Y-m-d H:i:s'),
@@ -91,12 +108,44 @@ class SlotService
      */
     public function reserve(Technician $technician, CarbonImmutable $startsAt, int $durationMinutes): Schedule
     {
-        return Schedule::query()->create([
-            'technician_id' => $technician->id,
-            'starts_at' => $startsAt,
-            'ends_at' => $startsAt->addMinutes($durationMinutes),
-            'is_available' => false,
-        ]);
+        // Окно могло быть объявлено заранее (например, сидером расписания) — тогда его
+        // нужно не создавать заново, а пометить занятым: иначе сработает
+        // UNIQUE(technician_id, starts_at) и клиент получит 500.
+        return Schedule::query()->updateOrCreate(
+            ['technician_id' => $technician->id, 'starts_at' => $startsAt],
+            ['ends_at' => $startsAt->addMinutes($durationMinutes), 'is_available' => false]
+        );
+    }
+
+    /**
+     * Свободен ли указанный интервал у мастера (учитываются только забронированные окна).
+     */
+    public function hasOverlap(Technician $technician, CarbonImmutable $startsAt, CarbonImmutable $endsAt): bool
+    {
+        return Schedule::query()
+            ->where('technician_id', $technician->id)
+            ->where('is_available', false)
+            ->where('starts_at', '<', $endsAt)
+            ->where('ends_at', '>', $startsAt)
+            ->exists();
+    }
+
+    /**
+     * Попадает ли время в рабочую сетку мастера (часы приёма и шаг слота из настроек).
+     */
+    public function isWithinWorkingHours(CarbonImmutable $startsAt): bool
+    {
+        $settings = $this->settings();
+        $dayStart = $startsAt->setTimeFromTimeString($settings['work_day_start'] ?? '10:00');
+        $dayEnd = $startsAt->setTimeFromTimeString($settings['work_day_end'] ?? '20:00');
+        $step = max(15, (int) ($settings['slot_step_minutes'] ?? 60));
+
+        $minutesFromStart = ($startsAt->hour * 60 + $startsAt->minute) - ($dayStart->hour * 60 + $dayStart->minute);
+
+        return $startsAt->second === 0
+            && $minutesFromStart >= 0
+            && $startsAt->lessThan($dayEnd)
+            && $minutesFromStart % $step === 0;
     }
 
     public function humanDate(CarbonImmutable $date): string

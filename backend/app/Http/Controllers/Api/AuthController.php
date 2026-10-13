@@ -18,7 +18,7 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'min:2', 'max:120'],
             'email' => ['required', 'string', 'email', 'max:190', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:30'],
-            'password' => ['required', 'string', 'min:6', 'confirmed'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
         $user = User::query()->create([
@@ -79,16 +79,39 @@ class AuthController extends Controller
             'name' => ['sometimes', 'string', 'min:2', 'max:120'],
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['sometimes', 'email', 'max:190', Rule::unique('users', 'email')->ignore($user->id)],
-            'password' => ['nullable', 'string', 'min:6', 'confirmed'],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'current_password' => ['nullable', 'string'],
         ]);
 
-        if (! empty($data['password'])) {
+        $changingPassword = ! empty($data['password']);
+        $changingEmail = isset($data['email']) && mb_strtolower($data['email']) !== mb_strtolower((string) $user->email);
+
+        // Пароль и e-mail меняются только с подтверждением текущего пароля:
+        // одного украденного токена недостаточно для захвата аккаунта.
+        if (($changingPassword || $changingEmail) && ! Hash::check((string) ($data['current_password'] ?? ''), $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['Укажите текущий пароль, чтобы изменить пароль или e-mail.'],
+            ]);
+        }
+
+        if ($changingPassword) {
             $data['password'] = Hash::make($data['password']);
         } else {
             unset($data['password']);
         }
 
+        unset($data['current_password']);
+
         $user->update($data);
+
+        // После смены пароля отзываем все остальные токены, оставляя текущий.
+        if ($changingPassword) {
+            $currentTokenId = $request->user()->currentAccessToken()?->id;
+
+            $user->tokens()
+                ->when($currentTokenId, fn ($query) => $query->whereKeyNot($currentTokenId))
+                ->delete();
+        }
 
         return response()->json([
             'message' => 'Профиль обновлён.',

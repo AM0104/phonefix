@@ -1,5 +1,8 @@
 # Развёртывание PhoneFix
 
+Меры защиты проекта и порядок действий при инциденте описаны в
+[SECURITY.md](SECURITY.md).
+
 Документ описывает два сценария:
 
 1. **Локально на OSPanel (Windows)** — для разработки и защиты проекта «в классе».
@@ -13,7 +16,7 @@
 
 Проект уже подключён к OSPanel и работает на MySQL:
 
-- привязка `D:\OSPanel\home\phonefix.local` → `C:\Users\CorteZ\Documents\Сайт\backend`;
+- привязка `D:\OSPanel\home\phonefix.local` → `E:\Сайт\backend`;
 - настройки проекта — `backend\.osp\project.ini` (PHP **8.3**, `web_root = {base_dir}\public`);
 - домен `phonefix.local` прописан в `C:\Windows\System32\drivers\etc\hosts`;
 - база — **MySQL 8.0** (модуль OSPanel), база `phonefix`: схема и демо-данные загружены;
@@ -60,7 +63,7 @@ mysql -uroot -e "CREATE DATABASE phonefix CHARACTER SET utf8mb4 COLLATE utf8mb4_
 
 1. OSPanel → **Настройки → Домены → Создать домен**.
 2. Имя домена: `phonefix.local`
-3. Папка домена: `C:\Users\<user>\Documents\Сайт\backend\public`
+3. Папка домена: `E:\Сайт\backend\public`
 4. Перезапустите Apache, откройте `http://phonefix.local`.
 
 > Если проект должен открываться по корневому домену, укажите вторым шагом алиасы для SPA-роутов — Laravel сам отдаст `public/app/index.html` (fallback уже настроен в `routes/web.php`).
@@ -68,7 +71,7 @@ mysql -uroot -e "CREATE DATABASE phonefix CHARACTER SET utf8mb4 COLLATE utf8mb4_
 ### 1.4. Бэкенд
 
 ```powershell
-cd "C:\Users\<user>\Documents\Сайт\backend"
+cd "E:\Сайт\backend"
 
 # зависимости PHP
 composer install
@@ -91,7 +94,7 @@ php artisan storage:link
 ### 1.5. Фронтенд (режим разработки)
 
 ```powershell
-cd "C:\Users\<user>\Documents\Сайт\frontend"
+cd "E:\Сайт\frontend"
 npm install
 npm run dev
 ```
@@ -198,8 +201,8 @@ git clone <адрес_репозитория> phonefix
 
 ```powershell
 # архивируем проект без vendor и node_modules
-cd "C:\Users\<user>\Documents\Сайт"
-tar -czf phonefix.tar.gz --exclude=node_modules --exclude=vendor backend frontend docs README.md
+cd "E:\Сайт"
+tar -czf phonefix.tar.gz --exclude=node_modules --exclude=vendor --exclude=backend/.env --exclude=backend/database/*.sqlite --exclude=backend/storage/logs backend frontend docs README.md
 scp phonefix.tar.gz root@<ваш_IP>:/var/www/
 ```
 
@@ -238,9 +241,13 @@ DB_USERNAME=phonefix
 DB_PASSWORD=ЗаменитеЭтотПароль
 
 SESSION_DRIVER=file
+# true — только когда настроен HTTPS (см. 2.7.1), иначе cookie не будет отправляться
+SESSION_SECURE_COOKIE=false
 CACHE_STORE=file
 QUEUE_CONNECTION=sync
 FRONTEND_URL=http://<ваш_IP>
+CORS_ALLOWED_ORIGINS=http://<ваш_IP>
+SANCTUM_TOKEN_EXPIRATION=10080
 ```
 
 Далее:
@@ -279,6 +286,18 @@ server {
 
     client_max_body_size 20m;
 
+    # Не раскрываем версию сервера
+    server_tokens off;
+
+    # Заголовки безопасности (те же добавляет middleware SecurityHeaders)
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
+    add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" always;
+    # HSTS включайте только вместе с HTTPS — см. 2.7.1
+    # add_header Strict-Transport-Security "max-age=31536000" always;
+
     # Laravel: сначала статика, затем index.php
     location / {
         try_files $uri $uri/ /index.php?$query_string;
@@ -288,6 +307,7 @@ server {
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/run/php/php8.3-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_hide_header X-Powered-By;
     }
 
     location ~ /\.(?!well-known).* {
@@ -308,6 +328,14 @@ systemctl restart php8.3-fpm
 
 Откройте `http://<ваш_IP>` — должен открыться сайт PhoneFix.
 
+### 2.7.1. HTTPS (рекомендуется, если есть домен)
+
+По заданию сайт должен открываться по IP, поэтому TLS не обязателен. Если домен есть —
+включите HTTPS: с Let's Encrypt `certbot --nginx -d ваш-домен.ru` или самоподписанным
+сертификатом, затем добавьте в server-блок строку
+`add_header Strict-Transport-Security "max-age=31536000" always;` и поставьте
+`SESSION_SECURE_COOKIE=true` в `.env` (после правки — `php artisan config:clear`).
+
 ### 2.8. Оптимизация после деплоя
 
 ```bash
@@ -324,10 +352,11 @@ php artisan view:cache
 ```bash
 cd /var/www/phonefix
 git pull                                    # если используете git
+# либо одной командой:  bash deploy/update-vps.sh  (git pull + миграции + сборка + кэши)
 
 cd backend
 composer install --no-dev --optimize-autoloader
-php artisan migrate --force
+php artisan migrate --force      # добавит настройку privacy_policy, не затирая ваши тексты
 php artisan config:cache && php artisan route:cache
 
 cd ../frontend && npm install && npm run build

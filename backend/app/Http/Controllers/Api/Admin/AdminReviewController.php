@@ -15,7 +15,7 @@ class AdminReviewController extends Controller
             ->with(['user:id,name,email', 'service:id,title', 'technician:id,full_name'])
             ->when($request->query('status'), fn ($q, $status) => $q->where('status', $status))
             ->latest()
-            ->paginate((int) $request->query('per_page', 15));
+            ->paginate(min(100, max(1, (int) $request->query('per_page', 15))));
 
         return response()->json($reviews);
     }

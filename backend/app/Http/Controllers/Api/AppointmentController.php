@@ -75,11 +75,29 @@ class AppointmentController extends Controller
             ]);
         }
 
-        $appointment = DB::transaction(function () use ($request, $data, $service, $technician, $startsAt) {
-            // Блокируем слот, чтобы двое клиентов не заняли одно время.
+        // Время должно попадать в рабочую сетку мастера (её же показывает форма записи),
+        // а не быть произвольным: иначе через API можно занять 03:17 или выходной.
+        if (! $this->slots->isWithinWorkingHours($startsAt)) {
+            throw ValidationException::withMessages([
+                'starts_at' => ['Это время вне графика работы. Выберите свободное окно мастера.'],
+            ]);
+        }
+
+        $endsAt = $startsAt->addMinutes((int) $service->duration_minutes);
+
+        if ($this->slots->hasOverlap($technician, $startsAt, $endsAt)) {
+            throw ValidationException::withMessages([
+                'starts_at' => ['Это время уже занято. Выберите другой слот.'],
+            ]);
+        }
+
+        $appointment = DB::transaction(function () use ($request, $data, $service, $technician, $startsAt, $endsAt) {
+            // Блокируем интервал, чтобы двое клиентов не заняли пересекающееся время.
             $alreadyTaken = \App\Models\Schedule::query()
                 ->where('technician_id', $technician->id)
-                ->where('starts_at', $startsAt)
+                ->where('is_available', false)
+                ->where('starts_at', '<', $endsAt)
+                ->where('ends_at', '>', $startsAt)
                 ->lockForUpdate()
                 ->exists();
 
