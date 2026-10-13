@@ -21,6 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Общий лимит на API (60 запросов в минуту на пользователя/IP).
         $middleware->throttleApi();
 
+        // Сайт работает за прокси панели (sweet-planet.vps.ktk-45.ru), поэтому реальный
+        // IP клиента приходит в X-Forwarded-For: без этого все посетители считались бы
+        // одним IP, а лимиты стали бы общими на весь интернет.
+        $middleware->trustProxies(at: '*');
+
         $middleware->api(prepend: [
             Illuminate\Http\Middleware\HandleCors::class,
         ]);

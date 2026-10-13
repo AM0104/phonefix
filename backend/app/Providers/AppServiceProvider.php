@@ -40,7 +40,7 @@ class AppServiceProvider extends ServiceProvider
     private function configureRateLimiting(): void
     {
         // Именованный лимитер для группы api (используется throttleApi()).
-        RateLimiter::for('api', fn (Request $request) => Limit::perMinute(60)
+        RateLimiter::for('api', fn (Request $request) => Limit::perMinute(240)
             ->by($request->user()?->id ?: $request->ip()));
 
         // Вход: 5 попыток в минуту на пару «e-mail + IP».
@@ -48,12 +48,12 @@ class AppServiceProvider extends ServiceProvider
             ->by(mb_strtolower((string) $request->input('email')).'|'.$request->ip()));
 
         // Регистрация: 5 аккаунтов в минуту с одного IP.
-        RateLimiter::for('register', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+        RateLimiter::for('register', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
 
         // Заявка на звонок: 5 отправок в минуту с одного IP.
-        RateLimiter::for('leads', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+        RateLimiter::for('leads', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
 
-        // Публичное чтение (услуги, мастера, слоты, отзывы): 60 запросов в минуту.
-        RateLimiter::for('public', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
+        // Публичное чтение (услуги, мастера, слоты, отзывы): 240 запросов в минуту.
+        RateLimiter::for('public', fn (Request $request) => Limit::perMinute(240)->by($request->ip()));
     }
 }
