@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { useToast } from '../../components/Toast.jsx'
+import AdminNotifications from '../../components/AdminNotifications.jsx'
 
 const NAV_GROUPS = [
   {
@@ -65,7 +66,10 @@ export default function AdminLayout() {
 
         <div className="card card--flat" style={{ marginTop: 'auto' }}>
           <span className="card__meta">Вы вошли как</span>
-          <div style={{ fontWeight: 700 }}>{user?.name}</div>
+          <div className="row row--between" style={{ alignItems: 'center', gap: 10 }}>
+            <div style={{ fontWeight: 700 }}>{user?.name}</div>
+            <AdminNotifications />
+          </div>
           <span className="card__meta">Администратор</span>
           <div className="stack" style={{ marginTop: 14, gap: 8 }}>
             <NavLink className="btn btn--ghost btn--sm" to="/">

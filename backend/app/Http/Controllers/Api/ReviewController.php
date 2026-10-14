@@ -24,6 +24,20 @@ class ReviewController extends Controller
     }
 
     /**
+     * Отзывы текущего пользователя — вкладка «Мои отзывы» в профиле.
+     */
+    public function my(Request $request): JsonResponse
+    {
+        $reviews = Review::query()
+            ->where('user_id', $request->user()->id)
+            ->with(['service:id,title', 'technician:id,full_name'])
+            ->latest()
+            ->get();
+
+        return response()->json(['data' => $reviews]);
+    }
+
+    /**
      * Отзыв можно оставить только по выполненной заявке — защита от накрутки.
      */
     public function store(Request $request, Appointment $appointment): JsonResponse

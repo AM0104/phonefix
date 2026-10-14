@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { Alert, Field } from '../components/ui.jsx'
+import { emailError, phoneError } from '../api/format.js'
 
 export default function Register() {
   const { register } = useAuth()
@@ -26,6 +27,21 @@ export default function Register() {
 
   const submit = async (event) => {
     event.preventDefault()
+
+    // Проверяем форматы на клиенте, чтобы не гонять заведомо неверные данные на сервер.
+    const localErrors = {}
+    const emailIssue = emailError(form.email)
+    const phoneIssue = phoneError(form.phone)
+
+    if (emailIssue) localErrors.email = [emailIssue]
+    if (phoneIssue) localErrors.phone = [phoneIssue]
+
+    if (Object.keys(localErrors).length > 0) {
+      setErrors(localErrors)
+      setError('Проверьте, пожалуйста, e-mail и телефон.')
+      return
+    }
+
     setSending(true)
     setError('')
     setErrors({})
@@ -64,8 +80,8 @@ export default function Register() {
               <input type="email" value={form.email} onChange={update('email')} placeholder="mail@example.com" required />
             </Field>
 
-            <Field label="Телефон" error={errors.phone?.[0]} hint="Нужен, чтобы подтвердить запись">
-              <input value={form.phone} onChange={update('phone')} placeholder="+7 (___) ___-__-__" inputMode="tel" />
+            <Field label="Телефон *" error={errors.phone?.[0]} hint="Формат: +7 (912) 345-67-89">
+              <input value={form.phone} onChange={update('phone')} placeholder="+7 (912) 345-67-89" inputMode="tel" required />
             </Field>
 
             <div className="form-grid">

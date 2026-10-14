@@ -15,6 +15,13 @@ export default function AdminAppointments() {
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({})
 
+  // Переписка с клиентом по заявке.
+  const [chatFor, setChatFor] = useState(null)
+  const [messages, setMessages] = useState([])
+  const [chatLoading, setChatLoading] = useState(false)
+  const [chatText, setChatText] = useState('')
+  const [sending, setSending] = useState(false)
+
   const load = useCallback(() => {
     setLoading(true)
 
@@ -62,6 +69,46 @@ export default function AdminAppointments() {
       load()
     } catch (error) {
       toast.error(error.message)
+    }
+  }
+
+  const loadMessages = useCallback(
+    (appointmentId) => {
+      setChatLoading(true)
+
+      adminApi
+        .messages(appointmentId)
+        .then((response) => setMessages(response.data || []))
+        .catch((error) => toast.error(error.message))
+        .finally(() => setChatLoading(false))
+    },
+    [toast],
+  )
+
+  const openChat = (appointment) => {
+    setChatFor(appointment)
+    setChatText('')
+    setMessages([])
+    loadMessages(appointment.id)
+  }
+
+  const sendMessage = async (event) => {
+    event.preventDefault()
+
+    const body = chatText.trim()
+    if (!body || !chatFor) return
+
+    setSending(true)
+
+    try {
+      const response = await adminApi.sendMessage(chatFor.id, body)
+      toast.success(response.message || 'Сообщение отправлено')
+      setChatText('')
+      loadMessages(chatFor.id)
+    } catch (error) {
+      toast.error(error.message)
+    } finally {
+      setSending(false)
     }
   }
 
@@ -153,6 +200,9 @@ export default function AdminAppointments() {
                     </td>
                     <td>
                       <div className="row" style={{ gap: 6 }}>
+                        <button type="button" className="btn btn--ghost btn--sm" onClick={() => openChat(appointment)}>
+                          Переписка
+                        </button>
                         <button type="button" className="btn btn--ghost btn--sm" onClick={() => openEdit(appointment)}>
                           Изменить
                         </button>
@@ -245,6 +295,67 @@ export default function AdminAppointments() {
           </form>
         </Modal>
       )}
+      {chatFor && (
+        <Modal
+          title={`Переписка по заявке №${chatFor.id}`}
+          subtitle={`${chatFor.client?.name || 'Клиент'} · ${chatFor.device_model || ''}`}
+          onClose={() => setChatFor(null)}
+          wide
+        >
+          {chatLoading && <Loading label="Загружаем сообщения…" />}
+
+          {!chatLoading && (
+            <div className="stack" style={{ gap: 10, maxHeight: 360, overflowY: 'auto', paddingRight: 4 }}>
+              {messages.length === 0 && (
+                <p className="muted" style={{ margin: 0 }}>
+                  Переписки пока нет. Напишите клиенту первым.
+                </p>
+              )}
+
+              {messages.map((message) => (
+                <div key={message.id} style={{ display: 'flex', justifyContent: message.is_from_admin ? 'flex-end' : 'flex-start' }}>
+                  <div
+                    style={{
+                      maxWidth: '78%',
+                      padding: '10px 13px',
+                      borderRadius: 12,
+                      border: '1px solid var(--pf-line)',
+                      background: message.is_from_admin ? 'var(--pf-accent-soft)' : 'var(--pf-surface-2)',
+                    }}
+                  >
+                    <div className="card__meta" style={{ marginBottom: 4 }}>
+                      {message.is_from_admin ? 'Администратор' : message.author_name || 'Клиент'} ·{' '}
+                      {formatDateTime(message.created_at)}
+                    </div>
+                    <div style={{ whiteSpace: 'pre-wrap', fontSize: 14.5 }}>{message.body}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <form className="stack" style={{ marginTop: 16 }} onSubmit={sendMessage}>
+            <Field label="Сообщение клиенту">
+              <textarea
+                value={chatText}
+                onChange={(event) => setChatText(event.target.value)}
+                placeholder="Например: диагностика закончена, замена дисплея — 4 500 ₽, будет готово к 18:00"
+                style={{ minHeight: 90 }}
+              />
+            </Field>
+
+            <div className="row">
+              <button type="submit" className="btn btn--primary" disabled={sending || !chatText.trim()}>
+                {sending ? 'Отправляем…' : 'Отправить'}
+              </button>
+              <button type="button" className="btn btn--ghost" onClick={() => setChatFor(null)}>
+                Закрыть
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
     </>
   )
 }

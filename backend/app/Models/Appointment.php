@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Appointment extends Model
 {
@@ -72,6 +73,14 @@ class Appointment extends Model
     public function schedule(): BelongsTo
     {
         return $this->belongsTo(Schedule::class);
+    }
+
+    /**
+     * Переписка по заявке: клиент <-> администратор.
+     */
+    public function messages(): HasMany
+    {
+        return $this->hasMany(AppointmentMessage::class)->orderBy('created_at')->orderBy('id');
     }
 
     public function scopeStatus(Builder $query, ?string $status): Builder

@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\AdminAppointmentController;
+use App\Http\Controllers\Api\Admin\AdminAppointmentMessageController;
 use App\Http\Controllers\Api\Admin\AdminArticleController;
 use App\Http\Controllers\Api\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\Admin\AdminLeadController;
+use App\Http\Controllers\Api\Admin\AdminNotificationController;
 use App\Http\Controllers\Api\Admin\AdminReviewController;
 use App\Http\Controllers\Api\Admin\AdminScheduleController;
 use App\Http\Controllers\Api\Admin\AdminServiceController;
@@ -11,6 +13,7 @@ use App\Http\Controllers\Api\Admin\AdminSettingController;
 use App\Http\Controllers\Api\Admin\AdminTechnicianController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
 use App\Http\Controllers\Api\AppointmentController;
+use App\Http\Controllers\Api\AppointmentMessageController;
 use App\Http\Controllers\Api\ArticleController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\LeadController;
@@ -56,6 +59,11 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('appointments/{appointment}', [AppointmentController::class, 'show']);
     Route::patch('appointments/{appointment}/cancel', [AppointmentController::class, 'cancel']);
     Route::post('appointments/{appointment}/review', [ReviewController::class, 'store']);
+
+    // Переписка по заявке и «Мои отзывы» в профиле.
+    Route::get('appointments/{appointment}/messages', [AppointmentMessageController::class, 'index']);
+    Route::post('appointments/{appointment}/messages', [AppointmentMessageController::class, 'store']);
+    Route::get('reviews/my', [ReviewController::class, 'my']);
 });
 
 // --- Админ-панель --------------------------------------------------------
@@ -66,6 +74,11 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin'])->group(functi
     Route::get('appointments/{appointment}', [AdminAppointmentController::class, 'show']);
     Route::patch('appointments/{appointment}', [AdminAppointmentController::class, 'update']);
     Route::delete('appointments/{appointment}', [AdminAppointmentController::class, 'destroy']);
+
+    // Уведомления и ответы в переписке по заявке.
+    Route::get('notifications', [AdminNotificationController::class, 'index']);
+    Route::get('appointments/{appointment}/messages', [AdminAppointmentMessageController::class, 'index']);
+    Route::post('appointments/{appointment}/messages', [AdminAppointmentMessageController::class, 'store']);
 
     Route::apiResource('services', AdminServiceController::class)->except(['create', 'edit']);
     Route::apiResource('technicians', AdminTechnicianController::class)->except(['create', 'edit']);

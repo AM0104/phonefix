@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Rules\PhoneNumber;
 use App\Models\Lead;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,8 +17,8 @@ class LeadController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:120'],
-            'phone' => ['required', 'string', 'min:6', 'max:30'],
-            'email' => ['nullable', 'email', 'max:190'],
+            'phone' => ['required', 'string', 'max:30', new PhoneNumber()],
+            'email' => ['nullable', 'email:rfc', 'max:190'],
             'comment' => ['nullable', 'string', 'max:2000'],
             'source' => ['nullable', 'string', 'max:60'],
         ]);

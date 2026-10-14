@@ -40,6 +40,7 @@ class AuthTest extends TestCase
         $this->postJson('/api/auth/register', [
             'name' => 'Хакер',
             'email' => 'hacker@example.com',
+            'phone' => '+7 (912) 111-22-33',
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
             'role' => User::ROLE_ADMIN,

@@ -4,6 +4,7 @@ import { publicApi } from '../api/client.js'
 import { Alert, Field, Modal } from './ui.jsx'
 import { useSite } from '../context/SiteContext.jsx'
 import { useToast } from './Toast.jsx'
+import { emailError, phoneError } from '../api/format.js'
 
 const EMPTY = { name: '', phone: '', email: '', comment: '' }
 
@@ -19,6 +20,20 @@ export default function CallbackModal({ source = 'callback-modal', onClose }) {
 
   const submit = async (event) => {
     event.preventDefault()
+
+    const localErrors = {}
+    const phoneIssue = phoneError(form.phone)
+    const mailIssue = form.email.trim() ? emailError(form.email) : ''
+
+    if (phoneIssue) localErrors.phone = [phoneIssue]
+    if (mailIssue) localErrors.email = [mailIssue]
+
+    if (Object.keys(localErrors).length > 0) {
+      setErrors(localErrors)
+      setError('Проверьте, пожалуйста, телефон и e-mail.')
+      return
+    }
+
     setSending(true)
     setErrors({})
     setError('')
@@ -53,7 +68,7 @@ export default function CallbackModal({ source = 'callback-modal', onClose }) {
           <input
             value={form.phone}
             onChange={update('phone')}
-            placeholder="+7 (___) ___-__-__"
+            placeholder="+7 (912) 345-67-89"
             required
             inputMode="tel"
           />

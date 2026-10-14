@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Rules\PhoneNumber;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -16,8 +17,8 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:120'],
-            'email' => ['required', 'string', 'email', 'max:190', 'unique:users,email'],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'email' => ['required', 'string', 'email:rfc', 'max:190', 'unique:users,email'],
+            'phone' => ['required', 'string', 'max:30', new PhoneNumber()],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
@@ -77,8 +78,8 @@ class AuthController extends Controller
 
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'min:2', 'max:120'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'email' => ['sometimes', 'email', 'max:190', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone' => ['sometimes', 'required', 'string', 'max:30', new PhoneNumber()],
+            'email' => ['sometimes', 'email:rfc', 'max:190', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'current_password' => ['nullable', 'string'],
         ]);

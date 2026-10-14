@@ -115,6 +115,9 @@ export const clientApi = {
   createAppointment: (body) => api.post('/appointments', body, { auth: true }),
   cancelAppointment: (id) => api.patch(`/appointments/${id}/cancel`, {}, { auth: true }),
   createReview: (id, body) => api.post(`/appointments/${id}/review`, body, { auth: true }),
+  myReviews: () => api.get('/reviews/my', { auth: true }),
+  messages: (id) => api.get(`/appointments/${id}/messages`, { auth: true }),
+  sendMessage: (id, body) => api.post(`/appointments/${id}/messages`, { body }, { auth: true }),
 }
 
 // Админ-панель
@@ -160,4 +163,8 @@ export const adminApi = {
 
   settings: () => api.get('/admin/settings', { auth: true }),
   saveSettings: (settings) => api.put('/admin/settings', { settings }, { auth: true }),
+
+  notifications: () => api.get('/admin/notifications', { auth: true }),
+  messages: (id) => api.get(`/admin/appointments/${id}/messages`, { auth: true }),
+  sendMessage: (id, body) => api.post(`/admin/appointments/${id}/messages`, { body }, { auth: true }),
 }
